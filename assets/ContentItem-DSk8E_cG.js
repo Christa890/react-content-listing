@@ -1,4 +1,4 @@
-import{d as s,j as t}from"./index-Ua0TCTGL.js";const n=s.img`
+import{d as s,j as t}from"./index-CqswhSSv.js";const n=s.img`
   width: 100%;
   aspect-ratio: 2 / 3;
   object-fit: cover;
