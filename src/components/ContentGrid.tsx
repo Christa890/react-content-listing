@@ -20,18 +20,16 @@ const LoadingMessage = styled.div`
 `;
 
 interface ContentGridProps {
-  data: any[];  // Ensure you accept the data prop as an array of items
-  handleScroll: ()=>void,
+  data: any[];  // Ensure you accept the data prop as an array of item
   isLoading:boolean,
-  containerRef:React.RefObject<HTMLDivElement>
 }
 
-const ContentGrid: React.FC<ContentGridProps> = ({ data ,handleScroll,isLoading,containerRef}) => {
+const ContentGrid: React.FC<ContentGridProps> = ({ data ,isLoading}) => {
   console.log(data)
 
 
   return (
-    <GridContainer ref={containerRef} onScroll={handleScroll}>
+    <GridContainer >
       {data.map((item, index) => (
         <Suspense fallback={<LoadingMessage>Loading...</LoadingMessage>} key={index}>
           <ContentItem item={item} />

@@ -1,83 +1,85 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import GlobalStyle from './styles/GlobalStyle';
 import ContentGrid from './components/ContentGrid';
 import SearchBar from './components/SearchBar';
 import axios from 'axios';
 
-const App = () => {
+const TOTAL_PAGES = 3; // Assuming we know the total number of pages available
 
+const App = () => {
   const [filteredData, setFilteredData] = useState<any[]>([]);
   const [fetchedData, setFetchedData] = useState<any[]>([]);
-  const [page, setPage] = useState(1);  // State to track the current page
-  const [isLoading, setIsLoading] = useState(false);  // Loading state
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const [hasMore, setHasMore] = useState(true); // If more data is available to load
-
+  const [page, setPage] = useState(1); // State to track the current page
+  const [isLoading, setIsLoading] = useState(false); // Loading state
+  const [title,setTitle]=useState("")
   // Fetch data from API
   const fetchData = useCallback(async (page: number) => {
-    if (!hasMore || isLoading) return; // Prevent multiple requests
     setIsLoading(true); // Start isLoading
 
     try {
       const response = await axios.get(`https://test.create.diagnal.com/data/page${page}.json`);
+      console.log(response)
+      setTitle(response.data.page['title']) //set page title
       const newItems = response.data.page['content-items'].content;
-
-      if (newItems.length > 0) {
-        setFetchedData((prevData) => [...prevData, ...newItems]); // Append new data to current data
-      } else {
-        setHasMore(false); // No more data to load
-      }
+      setFetchedData(newItems); // Set current page data
     } catch (error) {
       console.error('Error fetching data:', error);
     }
 
     setIsLoading(false); // Stop isLoading
-  }, [hasMore, isLoading]);
+  }, []);
 
-  // Load initial page (page 1)
+  // Load data for the current page
   useEffect(() => {
-    fetchData(1); // Load first page on component mount
-  }, [fetchData]);
+    fetchData(page); // Load data whenever the page changes
+  }, [page]);
 
-  // Load more data when scrolling reaches the bottom of the page
-  const handleScroll = useCallback(() => {
-    if (isLoading || !hasMore) return; // Prevent load if already isLoading or no more data
-
-    const scrollPosition = window.scrollY + window.innerHeight;
-    const bottomPosition = document.documentElement.scrollHeight - 100; // Add some offset for better detection
-
-    if (scrollPosition >= bottomPosition) {
-      setPage((prevPage) => prevPage + 1); // Load next page
+  // Handle next and previous page navigation
+  const handleNextPage = () => {
+    if (page < TOTAL_PAGES) {
+      setPage((prevPage) => prevPage + 1);
     }
-  }, [isLoading, hasMore]);
+    window.scrollTo(0, 0);
+  };
 
-  // Fetch next page of data when `page` changes
-  useEffect(() => {
+  const handlePreviousPage = () => {
     if (page > 1) {
-      fetchData(page);
+      setPage((prevPage) => prevPage - 1);
     }
-  }, [page, fetchData]);
-
-  // Attach scroll event listener
-  useEffect(() => {
-    const throttledHandleScroll = () => {
-      handleScroll();
-    };
-
-    window.addEventListener('scroll', throttledHandleScroll);
-    return () => window.removeEventListener('scroll', throttledHandleScroll); // Clean up event listener on unmount
-  }, [handleScroll]);
+    window.scrollTo(0, 0);
+  };
 
   return (
     <>
       <GlobalStyle />
       <div style={{ padding: '10px' }}>
-        <SearchBar data={fetchedData} setFilteredData={setFilteredData} />
-        <ContentGrid data={filteredData.length ? filteredData : fetchedData} 
-        handleScroll={handleScroll}
-        isLoading={isLoading}
-        containerRef={containerRef}/>
+        <SearchBar data={fetchedData} setFilteredData={setFilteredData} title={title} />
+        <ContentGrid
+          data={filteredData.length ? filteredData : fetchedData}
+          isLoading={isLoading}/>
+        
+        {/* Pagination Controls */}
+        <div style={{ display: 'flex',alignItems: 'center', justifyContent: 'center', marginTop: '20px' }}>
+          <button 
+            onClick={handlePreviousPage}
+            disabled={page === 1}
+            style={{ padding: '10px', marginRight: '10px', cursor: page === 1 ? 'not-allowed' : 'pointer' }}
+          >
+            Prev
+          </button>
+          
+          <span>Page {page} of {TOTAL_PAGES}</span>
+          
+          <button 
+            onClick={handleNextPage}
+            disabled={page === TOTAL_PAGES}
+            style={{ padding: '10px', marginLeft: '10px', cursor: page === TOTAL_PAGES ? 'not-allowed' : 'pointer' }}
+          >
+            Next
+          </button>
+        </div>
+        
+        {isLoading && <p>Loading...</p>}
       </div>
     </>
   );
